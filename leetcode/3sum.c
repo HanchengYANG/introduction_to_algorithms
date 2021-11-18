@@ -74,9 +74,7 @@ int** threeSum(int nums[], int numsSize, int* returnSize, int** returnColumnSize
 }
 
 int main() {
-    int array[] = {
-            -1,0,1,2,-1,-4
-    };
+    int array[] = { -1,0,1,2,-1,-4 };
     int resSize = 0;
     int *retColSize;
     int **result = threeSum(array, sizeof(array)/sizeof(int), &resSize, &retColSize);
