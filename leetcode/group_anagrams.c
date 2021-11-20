@@ -54,6 +54,7 @@ char *** groupAnagrams(char ** strs, int strsSize, int* returnSize, int** return
         ret[*returnSize - 1][(*returnColumnSizes)[*returnSize - 1]] = strs[m[i][0]];
         (*returnColumnSizes)[*returnSize - 1]++;
     }
+    free(m);
     return ret;
 }
 
@@ -75,6 +76,9 @@ int main() {
         for (j = 0; j < retColSize[i]; j++) {
             printf("%s\n", res[i][j]);
         }
+        free(res[i]);
     }
+    free(res);
+    free(retColSize);
     return 0;
 }
