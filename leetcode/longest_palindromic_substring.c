@@ -8,54 +8,72 @@
 #include <malloc.h>
 
 char * longestPalindrome(char * s) {
-    uint16_t s_size = strlen(s);
-#define M_SIZE_BYTE (s_size * s_size / 8 + 1)
-    // Matrix [s_size] x [s_size] bits, we need it initialized to zeros
-    uint8_t *m = (uint8_t*)calloc(M_SIZE_BYTE, sizeof(uint8_t));
-    uint16_t i, l, i_max = 0, j_max = 0, ret_size = 0; // string length max 1000
-#define M_SET(i, j) (m[((i) * s_size + (j)) >> 3] |= (1 << (((i) * s_size + (j)) & 0x07)))
-#define M_GET(i, j) (m[((i) * s_size + (j)) >> 3] & (1 << (((i) * s_size + (j)) & 0x07)))
-    // l is the distance to the diagonal
-    for (l = 0; l < s_size; l++) {
-        for (i = 0; i < s_size; i++) {
-            if (i + l > s_size - 1)
-                break;
-            else {
-                if (l == 0) {
-                    // It's diagonal line
-                    M_SET(i, i);
-                } else if (l == 1) {
-                    // It's string len = 2, if there a equal then it's palindrome
-                    if (s[i] == s[i + 1])
-                        M_SET(i, i + 1);
-                } else {
-                    /* For size larger than 2,
-                     * 1: if starting character equals ending character,
-                     * 2: if inner string is palindrome
-                     * Then it's palindrome */
-                    if (s[i] == s[i + l] && M_GET(i + 1, i + l - 1))
-                        M_SET(i, i + l);
-                }
+    /* Variable declaration */
+    uint16_t s_len, m_len, i, *r, L, C, i_symm;
+    char *manacher;
+    /* Variable initialization */
+    s_len = strlen(s);
+    if (s_len == 0)
+        return NULL;
+    if (s_len == 1)
+        return s;
+    if (s_len == 2) {
+        if (s[0] != s[1])
+            s[1] = '\0';
+        return s;
+    }
+    m_len = 2 * s_len + 1;
+    manacher = (char*)malloc(m_len * sizeof(char));
+    r = (uint16_t*)calloc(m_len, sizeof(uint16_t));
+    /* Step 1, pre-process the string by insert "#" between every character */
+    manacher[0] = '#';
+    for (i = 0; i < s_len; i++) {
+        manacher[(i << 1) + 1] = s[i];
+        manacher[(i << 1) + 2] = '#';
+    }
+    /* Step 2, fill manacher result array */
+    C = 0; // index of center of currently-right-est palindrome
+    L = 0; // length of current palindrome
+    for (i = 0; i < m_len; i++) {
+        if (C + L > i) {
+            // symmetric point: C - (i - C) = 2 * C - i
+            i_symm = (C << 1) - i;
+            // The symmetric palindrome is limited by start of string
+            // So the r[i] maybe larger than r[i_symm], should continue
+            if (i_symm == r[i_symm])
+                r[i] = r[i_symm];
+            // The size is too big, makes out of C + L, symmetric rule is not work
+            // But at least it's symmetric until C + L
+            if (i + r[i_symm] >= C + L)
+                r[i] = C + L - i;
+            // Perfect case
+            if (i_symm > r[i_symm] && i + r[i_symm] < C + L) {
+                r[i] = r[i_symm];
+                continue;
             }
         }
+        while(i - r[i] - 1 >= 0 && i + r[i] + 1 < m_len && manacher[i - r[i] - 1] == manacher[i + r[i] + 1]) {
+            r[i]++;
+        }
+        C = i;
+        L = r[i];
     }
-    for (i = 0; i < s_size; i++) {
-        for (l = i; l < s_size; l++) {
-            if (M_GET(i, l) && ((l - i) > ret_size)) {
-                i_max = i;
-                j_max = l;
-                ret_size = l - i;
-            }
+    // Step 3, looking for biggest palindrome.
+    s_len = 0; // reuse s_len as index of max value in r[] and r[0] = 0;
+    for (i = 0; i < m_len; i++) {
+        if (r[i] > r[s_len]) {
+            s_len = i;
         }
     }
-    free(m);
-    s[j_max + 1] = '\0';
-    return &s[i_max];
+    s[(s_len + r[s_len] + 1)>>1] = '\0';
+    s_len = (s_len - r[s_len] + 1)>>1;
+    free(r);
+    free(manacher);
+    return &s[s_len];
 }
 
 int main() {
-    char test[] = "acaabcdefghijk";
-    printf("%s: ", test);
+    char test[] = "babcbabcbaccbc";
     printf("%s\n", longestPalindrome(test));
     return 0;
 }
